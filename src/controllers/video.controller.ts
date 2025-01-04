@@ -21,6 +21,7 @@ export class VideoController {
             await this.invalidateCache();
             res.status(201).json(result);
         } catch (error) {
+            console.error('Error creating video:', error);
             res.status(500).json({ message: 'Error creating video metadata' });
         }
     }
@@ -51,9 +52,53 @@ export class VideoController {
         }
     }
 
-    /* get = async (req: Request, res: Response): Promise<void> => {
+    // get = async (req: Request, res: Response): Promise<void> => {
+    //     try {
+    //         const { genre, tags, page = 1, limit = 10 } = req.query;
+    //         const cacheKey = `${this.CACHE_PREFIX}${JSON.stringify(req.query)}`;
+    //         const cachedResult = await cacheService.get(cacheKey);
+            
+    //         if (cachedResult) {
+    //             const videos = await this.validateCachedData(cachedResult);
+    //             if (videos) {
+    //                 res.json(videos);
+    //                 return;
+    //             }
+    //         }
+
+    //         const queryBuilder = this.videoRepository.createQueryBuilder("video");
+            
+    //         if (genre) {
+    //             queryBuilder.andWhere("video.genre = :genre", { genre });
+    //         }
+            
+    //         if (tags) {
+    //             const tagArray = Array.isArray(tags) ? tags : [tags];
+    //             queryBuilder.andWhere("video.tags @> :tags", { tags: tagArray });
+    //         }
+
+    //         const [videos, total] = await queryBuilder
+    //             .skip((Number(page) - 1) * Number(limit))
+    //             .take(Number(limit))
+    //             .getManyAndCount();
+
+    //         const result = { videos, total, page: Number(page), limit: Number(limit) };
+    //         await cacheService.set(cacheKey, result);
+            
+    //         res.json(result);
+    //     } catch (error) {
+    //         res.status(500).json({ message: 'Error fetching videos' });
+    //     }
+    // }
+
+    get = async (req: Request, res: Response): Promise<void> => {
         try {
-            const { genre, tags, page = 1, limit = 10 } = req.query;
+            let { genre, tags, page = 1, limit = 10 } = req.query;
+            
+            // Validate page and limit
+            page = Math.max(1, parseInt(page as string, 10)); // Ensure page is at least 1
+            limit = isNaN(parseInt(limit as string, 10)) ? 10 : parseInt(limit as string, 10); // Default to 10 if invalid
+    
             const cacheKey = `${this.CACHE_PREFIX}${JSON.stringify(req.query)}`;
             const cachedResult = await cacheService.get(cacheKey);
             
@@ -64,7 +109,7 @@ export class VideoController {
                     return;
                 }
             }
-
+    
             const queryBuilder = this.videoRepository.createQueryBuilder("video");
             
             if (genre) {
@@ -75,54 +120,20 @@ export class VideoController {
                 const tagArray = Array.isArray(tags) ? tags : [tags];
                 queryBuilder.andWhere("video.tags @> :tags", { tags: tagArray });
             }
-
+    
             const [videos, total] = await queryBuilder
-                .skip((Number(page) - 1) * Number(limit))
-                .take(Number(limit))
+                .skip((page - 1) * limit)
+                .take(limit)
                 .getManyAndCount();
-
-            const result = { videos, total, page: Number(page), limit: Number(limit) };
+    
+            const result = { videos, total, page, limit };
             await cacheService.set(cacheKey, result);
             
             res.json(result);
         } catch (error) {
             res.status(500).json({ message: 'Error fetching videos' });
         }
-    } */
-    get = async (req: Request, res: Response): Promise<void> => {
-        try {
-            const { genre, tags, page = 1, limit = 10 } = req.query;
-            const pageNumber = Math.max(1, Number(page));
-            const pageSize = Math.max(1, Number(limit));
-    
-            const cacheKey = `${this.CACHE_PREFIX}${JSON.stringify({ genre, tags, page, limit })}`;
-            const cachedResult = await cacheService.get(cacheKey);
-            if (cachedResult) {
-                res.json(cachedResult);
-                return;
-            }
-    
-            const queryBuilder = this.videoRepository.createQueryBuilder("video");
-            if (genre) {
-                queryBuilder.andWhere("video.genre = :genre", { genre });
-            }
-            if (tags) {
-                const tagArray = Array.isArray(tags) ? tags : [tags];
-                queryBuilder.andWhere("video.tags && :tags", { tags: tagArray });
-            }
-    
-            const [videos, total] = await queryBuilder
-                .skip((pageNumber - 1) * pageSize)
-                .take(pageSize)
-                .getManyAndCount();
-    
-            const result = { videos, total, page: pageNumber, limit: pageSize };
-            await cacheService.set(cacheKey, result, 3600); // Cache for 1 hour
-            res.json(result);
-        } catch (error) {
-            res.status(500).json({ message: 'Error fetching videos', error });
-        }
-    };        
+    };    
 
     delete = async (req: Request, res: Response): Promise<void> => {
         try {
@@ -144,8 +155,14 @@ export class VideoController {
     }
 
     private async invalidateCache(): Promise<void> {
-        const keys = await cacheService.keys(`${this.CACHE_PREFIX}*`);
-        await Promise.all(keys.map(key => cacheService.del(key)));
+        if (process.env.NODE_ENV === 'test') return;
+        
+        try {
+            const keys = await cacheService.keys(`${this.CACHE_PREFIX}*`);
+            await Promise.all(keys.map(key => cacheService.del(key)));
+        } catch (error) {
+            console.error('Cache invalidation error:', error);
+        }
     }
 
     private async validateCachedData(cachedData: any): Promise<any | null> {

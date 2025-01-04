@@ -8,8 +8,8 @@
     "start": "ts-node --transpile-only src/server.ts",
     "dev": "nodemon --watch 'src/**/*.ts' --exec src/server.ts",
     "typeorm": "typeorm-ts-node-commonjs",
-    "test": "cross-env NODE_ENV=test jest --config jest.config.ts --detectOpenHandles --forceExit --verbose",
-    "test:win": "set NODE_ENV=test&& jest --config jest.config.ts --detectOpenHandles --forceExit --verbose",
+    "test": "cross-env NODE_ENV=test jest --config jest.config.js --detectOpenHandles --forceExit --verbose",
+    "test:win": "set NODE_ENV=test&& jest --config jest.config.js --detectOpenHandles --forceExit --verbose",
     "migrate": "node-pg-migrate"
   },
   "keywords": [

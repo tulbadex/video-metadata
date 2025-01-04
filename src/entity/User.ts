@@ -19,4 +19,10 @@ import {
 
     @Column()
     password: string;
+
+    @CreateDateColumn()
+    createdAt: Date;
+  
+    @UpdateDateColumn()
+    updatedAt: Date;
 }

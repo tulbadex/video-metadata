@@ -25,8 +25,11 @@ import {
     @Column()
     genre: string;
 
-    @Index("tags_index")
-    @Column("simple-array")
+    // @Index("tags_index")
+    // @Column("simple-array")
+    // tags: string[];
+
+    @Column('text', { array: true })
     tags: string[];
   
     @CreateDateColumn()

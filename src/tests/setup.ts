@@ -1,3 +1,4 @@
+import 'reflect-metadata';
 import testDataSource from '../test-utils/test-connection';
 import Redis from 'ioredis-mock';
 import jwt from 'jsonwebtoken';
