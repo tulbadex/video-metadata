@@ -4,6 +4,7 @@ import {
     Column,
     CreateDateColumn,
     UpdateDateColumn,
+    Index,
   } from "typeorm";
   
   @Entity('videos')
@@ -19,10 +20,12 @@ import {
   
     @Column()
     duration: number;
-  
+
+    @Index()
     @Column()
     genre: string;
-  
+
+    @Index("tags_index")
     @Column("simple-array")
     tags: string[];
   
